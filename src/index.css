@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { border-color: rgba(255,255,255,0.08); }
+  body {
+    background-color: #12121a;
+    color: white;
+    font-family: Inter, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: Poppins, sans-serif;
+  }
+}
+
+/* ── Shared component classes used across Auth pages ── */
+@layer components {
+  .input-field {
+    @apply w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-colors;
+  }
+  .btn-primary {
+    @apply bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-bold rounded-2xl transition-colors cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+  .gold-gradient { background: linear-gradient(135deg, #f59300, #fbbf24, #f59300); }
+  .text-gradient { background: linear-gradient(135deg, #f59300, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+}
+
+.swiper-pagination-bullet { background: #f59300 !important; }
+.swiper-button-next, .swiper-button-prev { color: #f59300 !important; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #12121a; }
+::-webkit-scrollbar-thumb { background: #f59300; border-radius: 3px; }
