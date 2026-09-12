@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import api from '../../services/api';
-import { useShop } from '../../context/ShopContext';
+import { useShop } from '../../context/shop-context';
 import toast from 'react-hot-toast';
 
 const EMPTY_FORM = {

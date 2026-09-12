@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
-import { useShop } from '../../context/ShopContext';
+import { useShop } from '../../context/shop-context';
 import toast from 'react-hot-toast';
 
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];

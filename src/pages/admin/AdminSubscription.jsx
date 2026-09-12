@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { useShop } from '../../context/ShopContext';
+import { useShop } from '../../context/shop-context';
 
 const statusColors = {
   active: 'bg-green-500/20 text-green-400',

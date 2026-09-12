@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSkeleton';
-import { useShop } from '../context/ShopContext';
+import { useShop } from '../context/shop-context';
 
 const statusColors = {
   pending:    'bg-yellow-500/20 text-yellow-400 border-yellow-500/20',

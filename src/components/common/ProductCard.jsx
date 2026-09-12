@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useCart } from '../../context/CartContext';
-import { useShop } from '../../context/ShopContext';
+import { useCart } from '../../context/cart-context';
+import { useShop } from '../../context/shop-context';
 import toast from 'react-hot-toast';
 
 const StarRating = ({ rating }) => (

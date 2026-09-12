@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import api from '../services/api';
 import ProductCard from '../components/common/ProductCard';
 import { ProductSkeleton } from '../components/common/LoadingSkeleton';
-import { useShop } from '../context/ShopContext';
+import { useShop } from '../context/shop-context';
 
 // Debounce hook — delays executing fn until user stops typing
 function useDebounce(value, delay = 400) {

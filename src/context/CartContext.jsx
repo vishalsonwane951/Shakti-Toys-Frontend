@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useShop } from './ShopContext';
+import { useShop } from './shop-context';
 import { CartContext } from './cart-context';
 
 function loadCart(storageKey) {

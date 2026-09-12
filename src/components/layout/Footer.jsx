@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useShop } from '../../context/ShopContext';
+import { useShop } from '../../context/shop-context';
 
 export default function Footer() {
   const { shop, shopSlug, brandName, logo } = useShop();

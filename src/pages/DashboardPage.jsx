@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
-import { useShop } from '../context/ShopContext';
+import { useAuth } from '../context/auth-context';
+import { useShop } from '../context/shop-context';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 

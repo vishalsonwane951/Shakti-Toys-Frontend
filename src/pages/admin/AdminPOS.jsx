@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
-import { useShop } from '../../context/ShopContext';
+import { useShop } from '../../context/shop-context';
 import toast from 'react-hot-toast';
 
 const PRINT_SIZES = [

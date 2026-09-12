@@ -10,7 +10,7 @@ import 'swiper/css/effect-fade';
 import api from '../services/api';
 import ProductCard from '../components/common/ProductCard';
 import { ProductSkeleton } from '../components/common/LoadingSkeleton';
-import { useShop } from '../context/ShopContext';
+import { useShop } from '../context/shop-context';
 
 const heroSlides = [
   {

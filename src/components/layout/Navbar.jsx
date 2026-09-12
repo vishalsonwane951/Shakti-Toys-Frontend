@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
-import { useCart } from "../../context/CartContext";
-import { useShop } from "../../context/ShopContext";
+import { useAuth } from "../../context/auth-context";
+import { useCart } from "../../context/cart-context";
+import { useShop } from "../../context/shop-context";
 
 export default function Navbar() {
   const { user, logout, isOwnerOrStaff } = useAuth();

@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
-import { useShop } from '../../context/ShopContext';
+import { useAuth } from '../../context/auth-context';
+import { useShop } from '../../context/shop-context';
 
 export default function AdminDashboard() {
   const { user, logout, isOwnerOrStaff, isOwner } = useAuth();

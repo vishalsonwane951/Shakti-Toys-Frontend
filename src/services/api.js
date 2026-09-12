@@ -3,7 +3,7 @@ import axios from 'axios';
 // Uses VITE_API_URL in production (set in Netlify env vars)
 // Falls back to /api proxy for local dev
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: 'https://store-os-backend.onrender.com/api',
   withCredentials: true,
 });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { useShop } from '../../context/ShopContext';
+import { useShop } from '../../context/shop-context';
 import toast from 'react-hot-toast';
 
 const inputCls = 'w-full bg-dark-700 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-primary-500/50 transition-colors';

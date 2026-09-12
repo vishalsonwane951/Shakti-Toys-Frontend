@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCart } from '../context/CartContext';
-import { useShop } from '../context/ShopContext';
+import { useCart } from '../context/cart-context';
+import { useShop } from '../context/shop-context';
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();

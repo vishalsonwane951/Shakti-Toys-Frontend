@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { useShop } from '../context/ShopContext';
+import { useCart } from '../context/cart-context';
+import { useAuth } from '../context/auth-context';
+import { useShop } from '../context/shop-context';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 

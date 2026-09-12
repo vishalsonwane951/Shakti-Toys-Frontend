@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
-import { useShop } from '../context/ShopContext';
+import { useAuth } from '../context/auth-context';
+import { useShop } from '../context/shop-context';
 import toast from 'react-hot-toast';
 
 export default function RegisterPage() {

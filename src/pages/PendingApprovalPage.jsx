@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
-import { useShop } from '../context/ShopContext';
+import { useAuth } from '../context/auth-context';
+import { useShop } from '../context/shop-context';
 
 export default function PendingApprovalPage() {
   const { user, logout, refreshMe } = useAuth();

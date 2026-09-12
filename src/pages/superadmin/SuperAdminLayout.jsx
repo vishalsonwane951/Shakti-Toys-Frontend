@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/auth-context';
 
 const navItems = [
   { to: '/superadmin', label: 'Overview', icon: '📊', exact: true },

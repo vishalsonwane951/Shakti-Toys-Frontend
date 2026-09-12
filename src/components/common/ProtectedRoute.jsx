@@ -1,5 +1,5 @@
 import { Navigate, useLocation, useParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/auth-context';
 
 function Spinner() {
   return <div className="min-h-screen flex items-center justify-center bg-dark-900"><div className="w-10 h-10 border-4 border-dark-600 border-t-primary-500 rounded-full animate-spin" /></div>;
