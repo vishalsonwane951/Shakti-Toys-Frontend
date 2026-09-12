@@ -1,14 +1,35 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { AuthContext } from './auth-context';
 
-const AuthContext = createContext();
-export const useAuth = () => useContext(AuthContext);
 
 const TOKEN_VERIFY_INTERVAL = 60 * 60 * 1000; // re-verify token max once per hour
 
+// Synchronously read localStorage once, on mount, so we don't need an
+// effect just to flip `loading` to false when there's nothing to verify.
+function getInitialAuthState() {
+  const token = localStorage.getItem('token');
+  const savedUser = localStorage.getItem('user');
+
+  if (!token || !savedUser) {
+    return { user: null, loading: false, needsVerify: false, hasToken: false };
+  }
+
+  const lastVerified = parseInt(localStorage.getItem('tokenVerified') || '0', 10);
+  const needsVerify = Date.now() - lastVerified > TOKEN_VERIFY_INTERVAL;
+
+  return {
+    user: JSON.parse(savedUser),
+    loading: needsVerify, // only "loading" if we actually have async work to do
+    needsVerify,
+    hasToken: true
+  };
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [initialAuthState] = useState(getInitialAuthState);
+  const [user, setUser] = useState(initialAuthState.user);
+  const [loading, setLoading] = useState(initialAuthState.loading);
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
@@ -18,32 +39,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    if (!initialAuthState.hasToken || !initialAuthState.needsVerify) return;
 
-    if (!token || !savedUser) {
-      setLoading(false);
-      return;
-    }
-
-    setUser(JSON.parse(savedUser));
-
-    const lastVerified = parseInt(localStorage.getItem('tokenVerified') || '0', 10);
-    const needsVerify = Date.now() - lastVerified > TOKEN_VERIFY_INTERVAL;
-
-    if (needsVerify) {
-      api.get('/auth/me')
-        .then(r => {
-          setUser(r.data.user);
-          localStorage.setItem('user', JSON.stringify(r.data.user));
-          localStorage.setItem('tokenVerified', Date.now().toString());
-        })
-        .catch(() => logout())
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, [logout]);
+    api.get('/auth/me')
+      .then(r => {
+        setUser(r.data.user);
+        localStorage.setItem('user', JSON.stringify(r.data.user));
+        localStorage.setItem('tokenVerified', Date.now().toString());
+      })
+      .catch(() => logout())
+      .finally(() => setLoading(false));
+  }, [initialAuthState, logout]);
 
   const persist = (data) => {
     localStorage.setItem('token', data.token);

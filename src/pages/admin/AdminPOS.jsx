@@ -4,6 +4,174 @@ import api from '../../services/api';
 import { useShop } from '../../context/ShopContext';
 import toast from 'react-hot-toast';
 
+const PRINT_SIZES = [
+  { id: 'thermal58', label: '58mm Thermal', widthMM: 58 },
+  { id: 'thermal76', label: '76mm (3") Thermal', widthMM: 76 },
+  { id: 'thermal80', label: '80mm Thermal', widthMM: 80 },
+  { id: 'a4', label: 'A4', widthMM: 210 },
+];
+
+const UPI_TIMEOUT_SECONDS = 5 * 60;
+
+function formatTimer(sec) {
+  const m = Math.floor(sec / 60).toString().padStart(2, '0');
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+// A visual placeholder QR pattern — there's no real UPI gateway wired up, so
+// this is decorative only; the cashier confirms payment manually below it.
+function FakeQRCode() {
+  const cells = Array.from({ length: 49 }, (_, i) => (i * 7 + Math.floor(i / 7) * 3) % 5 < 2);
+  return (
+    <div className="grid grid-cols-7 gap-0.5 w-40 h-40 bg-white p-3 rounded-xl mx-auto">
+      {cells.map((filled, i) => (
+        <div key={i} className={filled ? 'bg-dark-900' : 'bg-white'} />
+      ))}
+    </div>
+  );
+}
+
+function ReceiptContent({ order, shop, currencySymbol }) {
+  // Fallback timestamp captured once on mount — only used when the order
+  // itself has no createdAt. Avoids calling the impure Date.now() directly
+  // during render.
+  const [renderedAt] = useState(() => Date.now());
+  const orderDate = order.createdAt || renderedAt;
+
+  return (
+    <div className="text-black font-mono text-xs leading-relaxed p-4">
+      <div className="text-center mb-2">
+        {shop?.logo && <img src={shop.logo} alt="" className="w-10 h-10 object-cover rounded mx-auto mb-1" />}
+        <div className="font-bold text-sm">{shop?.name || 'Store'}</div>
+        {shop?.address?.city && <div>{shop.address.city}{shop.address.state ? `, ${shop.address.state}` : ''}</div>}
+        {shop?.contactPhone && <div>Ph: {shop.contactPhone}</div>}
+        {shop?.gstNumber && <div>GSTIN: {shop.gstNumber}</div>}
+      </div>
+      <div className="border-t border-dashed border-black my-2" />
+      <div className="flex justify-between"><span>Invoice</span><span>{order.invoiceNumber}</span></div>
+      <div className="flex justify-between"><span>Date</span><span>{new Date(orderDate).toLocaleString()}</span></div>
+      <div className="flex justify-between"><span>Payment</span><span>{order.paymentMethod}</span></div>
+      <div className="border-t border-dashed border-black my-2" />
+      {order.orderItems?.map((item, i) => (
+        <div key={i} className="mb-1">
+          <div className="flex justify-between"><span>{item.name}</span></div>
+          <div className="flex justify-between text-[11px] text-gray-700">
+            <span>{item.quantity} x {currencySymbol}{item.price?.toFixed(2)}</span>
+            <span>{currencySymbol}{(item.price * item.quantity - (item.discount || 0)).toFixed(2)}</span>
+          </div>
+        </div>
+      ))}
+      <div className="border-t border-dashed border-black my-2" />
+      <div className="flex justify-between"><span>Subtotal</span><span>{currencySymbol}{order.itemsPrice?.toFixed(2)}</span></div>
+      {order.discountTotal > 0 && <div className="flex justify-between"><span>Discount</span><span>-{currencySymbol}{order.discountTotal?.toFixed(2)}</span></div>}
+      {order.taxPrice > 0 && <div className="flex justify-between"><span>Tax</span><span>{currencySymbol}{order.taxPrice?.toFixed(2)}</span></div>}
+      <div className="flex justify-between font-bold text-sm mt-1"><span>Total</span><span>{currencySymbol}{order.totalPrice?.toFixed(2)}</span></div>
+      {order.amountTendered != null && (
+        <>
+          <div className="flex justify-between"><span>Tendered</span><span>{currencySymbol}{Number(order.amountTendered).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Change</span><span>{currencySymbol}{Number(order.changeDue || 0).toFixed(2)}</span></div>
+        </>
+      )}
+      <div className="border-t border-dashed border-black my-2" />
+      <div className="text-center mt-2">Thank you for shopping with us!</div>
+    </div>
+  );
+}
+
+function ReceiptPreviewModal({ order, onClose }) {
+  const { shop, currencySymbol } = useShop();
+  const [size, setSize] = useState(PRINT_SIZES[2]); // default: 80mm thermal
+
+  const handlePrint = () => {
+    let styleTag = document.getElementById('pos-print-size-style');
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'pos-print-size-style';
+      document.head.appendChild(styleTag);
+    }
+    styleTag.innerHTML = `@page { size: ${size.widthMM}mm auto; margin: 0; }`;
+    window.print();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-dark-800 border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-lg font-bold text-white">Print Receipt</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">×</button>
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-400 mb-2 block">Paper Size</label>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {PRINT_SIZES.map(s => (
+              <button key={s.id} onClick={() => setSize(s)}
+                className={`text-xs py-2 rounded-lg font-medium transition-colors ${size.id === s.id ? 'bg-primary-500 text-dark-900' : 'bg-dark-700 text-gray-400 hover:text-white'}`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto bg-dark-900 rounded-xl p-4 flex justify-center">
+          <div id="receipt-print-area" style={{ width: `${size.widthMM}mm` }} className="bg-white shadow-xl shrink-0">
+            <ReceiptContent order={order} shop={shop} currencySymbol={currencySymbol} />
+          </div>
+        </div>
+
+        <button onClick={handlePrint} className="w-full bg-primary-500 hover:bg-primary-400 text-dark-900 font-bold py-3 rounded-xl transition-colors mt-4">
+          Print ({size.label})
+        </button>
+      </motion.div>
+
+      {/* Print-only rules: hide everything except the receipt when printing */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #receipt-print-area, #receipt-print-area * { visibility: visible; }
+          #receipt-print-area { position: fixed; top: 0; left: 0; width: ${size.widthMM}mm; }
+        }
+      `}</style>
+    </motion.div>
+  );
+}
+
+function UPIScannerModal({ total, currencySymbol, onDone, onFailed }) {
+  const [secondsLeft, setSecondsLeft] = useState(UPI_TIMEOUT_SECONDS);
+
+  useEffect(() => {
+    if (secondsLeft <= 0) { onFailed('timeout'); return; }
+    const t = setTimeout(() => setSecondsLeft(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [secondsLeft, onFailed]);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-dark-800 border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center">
+        <h2 className="font-display text-lg font-bold text-white mb-1">Scan to Pay</h2>
+        <p className="text-primary-400 font-bold text-2xl mb-4">{currencySymbol}{total.toFixed(2)}</p>
+        <FakeQRCode />
+        <p className="text-xs text-gray-500 mt-3">Demo QR — no live payment gateway connected</p>
+        <div className="mt-4 text-sm text-gray-400">
+          Time remaining: <span className={`font-mono font-bold ${secondsLeft < 30 ? 'text-red-400' : 'text-white'}`}>{formatTimer(secondsLeft)}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <button onClick={() => onFailed('manual')} className="bg-red-500/20 text-red-400 hover:bg-red-500/30 font-semibold py-3 rounded-xl transition-colors text-sm">
+            Payment Failed
+          </button>
+          <button onClick={onDone} className="bg-green-500 hover:bg-green-400 text-dark-900 font-bold py-3 rounded-xl transition-colors text-sm">
+            Payment Done
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function AdminPOS() {
   const { currencySymbol } = useShop();
   const [query, setQuery] = useState('');
@@ -17,6 +185,9 @@ export default function AdminPOS() {
   const [taxPercent, setTaxPercent] = useState(0);
   const [placing, setPlacing] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
+  const [showUpiModal, setShowUpiModal] = useState(false);
+  const [showPaymentDonePopup, setShowPaymentDonePopup] = useState(false);
+  const [receiptOrder, setReceiptOrder] = useState(null);
   const searchRef = useRef(null);
 
   const search = useCallback(async (q) => {
@@ -71,8 +242,9 @@ export default function AdminPOS() {
     setPaymentMethod('Cash');
   };
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) { toast.error('Cart is empty'); return; }
+  // Actually creates the order via the API — called directly for Cash, or
+  // after the cashier confirms "Payment Done" on the UPI scanner popup.
+  const submitOrder = async () => {
     setPlacing(true);
     try {
       const { data } = await api.post('/shop/pos/orders', {
@@ -86,11 +258,35 @@ export default function AdminPOS() {
       setLastOrder(data.order);
       toast.success(`Sale complete — Invoice ${data.order.invoiceNumber}`);
       resetSale();
+      setReceiptOrder(data.order);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Checkout failed');
     } finally {
       setPlacing(false);
     }
+  };
+
+  const handleCompleteSale = () => {
+    if (cart.length === 0) { toast.error('Cart is empty'); return; }
+    if (paymentMethod === 'UPI') {
+      setShowUpiModal(true);
+      return;
+    }
+    submitOrder();
+  };
+
+  const handleUpiDone = () => {
+    setShowUpiModal(false);
+    setShowPaymentDonePopup(true);
+    setTimeout(async () => {
+      setShowPaymentDonePopup(false);
+      await submitOrder();
+    }, 2000);
+  };
+
+  const handleUpiFailed = (reason) => {
+    setShowUpiModal(false);
+    toast.error(reason === 'timeout' ? 'UPI payment timed out.' : 'Payment marked as failed. Try again or choose another payment method.');
   };
 
   return (
@@ -179,7 +375,7 @@ export default function AdminPOS() {
                 <p className="text-green-400 font-semibold">Last sale: {lastOrder.invoiceNumber}</p>
                 <p className="text-sm text-gray-400">Total {currencySymbol}{lastOrder.totalPrice?.toFixed(2)} • {lastOrder.paymentMethod}</p>
               </div>
-              <button onClick={() => window.print()} className="text-sm bg-dark-700 hover:bg-white/10 px-4 py-2 rounded-xl transition-colors">Print Receipt</button>
+              <button onClick={() => setReceiptOrder(lastOrder)} className="text-sm bg-dark-700 hover:bg-white/10 px-4 py-2 rounded-xl transition-colors">Print Receipt</button>
             </div>
           </div>
         )}
@@ -212,12 +408,21 @@ export default function AdminPOS() {
         <div>
           <label className="text-xs text-gray-400 mb-1 block">Payment Method</label>
           <div className="grid grid-cols-3 gap-2">
-            {['Cash', 'Card', 'UPI'].map(m => (
-              <button key={m} onClick={() => setPaymentMethod(m)}
-                className={`py-2 rounded-xl text-sm font-medium transition-colors ${paymentMethod === m ? 'bg-primary-500 text-dark-900' : 'bg-dark-700 text-gray-400 hover:text-white'}`}>
-                {m}
-              </button>
-            ))}
+            {['Cash', 'Card', 'UPI'].map(m => {
+              const disabled = m === 'Card';
+              return (
+                <button key={m} onClick={() => !disabled && setPaymentMethod(m)} disabled={disabled}
+                  title={disabled ? 'Card payments are temporarily unavailable' : undefined}
+                  className={`relative py-2 rounded-xl text-sm font-medium transition-colors ${
+                    disabled
+                      ? 'bg-dark-700/50 text-gray-600 cursor-not-allowed'
+                      : paymentMethod === m ? 'bg-primary-500 text-dark-900' : 'bg-dark-700 text-gray-400 hover:text-white'
+                  }`}>
+                  {m}
+                  {disabled && <span className="absolute -top-1.5 -right-1.5 bg-gray-600 text-[9px] text-gray-300 px-1.5 py-0.5 rounded-full">Soon</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -240,7 +445,7 @@ export default function AdminPOS() {
         </div>
 
         <button
-          onClick={handleCheckout}
+          onClick={handleCompleteSale}
           disabled={placing || cart.length === 0}
           className="w-full bg-primary-500 hover:bg-primary-400 disabled:opacity-50 text-dark-900 font-bold py-3.5 rounded-xl transition-colors"
         >
@@ -250,6 +455,34 @@ export default function AdminPOS() {
           <button onClick={resetSale} className="w-full text-sm text-gray-400 hover:text-red-400 transition-colors">Clear Cart</button>
         )}
       </div>
+
+      {/* UPI scanner popup */}
+      <AnimatePresence>
+        {showUpiModal && (
+          <UPIScannerModal total={total} currencySymbol={currencySymbol} onDone={handleUpiDone} onFailed={handleUpiFailed} />
+        )}
+      </AnimatePresence>
+
+      {/* Brief "payment done" confirmation before the receipt preview appears */}
+      <AnimatePresence>
+        {showPaymentDonePopup && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-dark-800 border border-green-500/30 rounded-2xl p-8 text-center">
+              <div className="text-5xl mb-3">✅</div>
+              <p className="font-display text-lg font-bold text-green-400">Payment Done</p>
+              <p className="text-sm text-gray-400 mt-1">Generating your receipt...</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Receipt preview + size-selectable printing */}
+      <AnimatePresence>
+        {receiptOrder && (
+          <ReceiptPreviewModal order={receiptOrder} onClose={() => setReceiptOrder(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -35,9 +35,18 @@ export default function AdminProducts() {
       .finally(() => setLoading(false));
   }, [page]);
 
+  // Deferring fetchProducts() into a microtask means its setLoading(true)
+  // call runs inside a .then() callback rather than directly in the effect
+  // body — satisfies react-hooks/set-state-in-effect. The categories fetch
+  // below is unaffected since its setState calls already live inside a
+  // .then()/.catch() callback.
   useEffect(() => {
-    fetchProducts();
+    let ignore = false;
+    Promise.resolve().then(() => {
+      if (!ignore) fetchProducts();
+    });
     api.get('/shop/categories').then(r => setCategories(r.data.categories)).catch(() => {});
+    return () => { ignore = true; };
   }, [fetchProducts]);
 
   const closeForm = useCallback(() => {

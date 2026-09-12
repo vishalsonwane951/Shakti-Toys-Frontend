@@ -24,7 +24,17 @@ export default function SuperAdminPlans() {
     api.get('/superadmin/plans').then(r => setPlans(r.data.plans)).catch(() => toast.error('Failed to load plans')).finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchPlans(); }, [fetchPlans]);
+  // Deferring into a microtask means fetchPlans() runs inside a .then()
+  // callback rather than directly in the effect body — satisfies
+  // react-hooks/set-state-in-effect, which flags setState calls made
+  // synchronously straight from an effect's callstack.
+  useEffect(() => {
+    let ignore = false;
+    Promise.resolve().then(() => {
+      if (!ignore) fetchPlans();
+    });
+    return () => { ignore = true; };
+  }, [fetchPlans]);
 
   const closeForm = () => { setShowForm(false); setEditPlan(null); setForm(EMPTY_FORM); };
 

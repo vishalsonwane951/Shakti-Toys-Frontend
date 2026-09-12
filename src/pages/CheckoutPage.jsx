@@ -22,7 +22,7 @@ export default function CheckoutPage() {
   // Calling navigate() directly in render body causes React warnings and bugs
   useEffect(() => {
     if (cartItems.length === 0) navigate(`/${shopSlug}/cart`);
-  }, [cartItems, navigate]);
+  }, [cartItems, navigate, shopSlug]);
 
   const shipping = totalPrice > 50 ? 0 : 5.99;
   const tax      = totalPrice * 0.08;

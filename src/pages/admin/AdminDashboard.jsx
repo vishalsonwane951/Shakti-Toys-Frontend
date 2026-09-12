@@ -5,7 +5,7 @@ import { useShop } from '../../context/ShopContext';
 
 export default function AdminDashboard() {
   const { user, logout, isOwnerOrStaff, isOwner } = useAuth();
-  const { shop, brandName, logo, loading: shopLoading } = useShop();
+  const { brandName, logo, loading: shopLoading } = useShop();
   const { shopSlug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();

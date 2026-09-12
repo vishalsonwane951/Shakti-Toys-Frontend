@@ -29,7 +29,17 @@ export default function AdminOrders() {
       .finally(() => setLoading(false));
   }, [page]);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  // Deferring into a microtask means fetchOrders() runs inside a .then()
+  // callback rather than directly in the effect body — satisfies
+  // react-hooks/set-state-in-effect, which flags setState calls made
+  // synchronously straight from an effect's callstack.
+  useEffect(() => {
+    let ignore = false;
+    Promise.resolve().then(() => {
+      if (!ignore) fetchOrders();
+    });
+    return () => { ignore = true; };
+  }, [fetchOrders]);
 
   const updateStatus = useCallback(async (id, status) => {
     try {

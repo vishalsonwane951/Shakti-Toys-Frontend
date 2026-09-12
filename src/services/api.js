@@ -3,7 +3,7 @@ import axios from 'axios';
 // Uses VITE_API_URL in production (set in Netlify env vars)
 // Falls back to /api proxy for local dev
 const api = axios.create({
-  baseURL:'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
 });
 
@@ -13,10 +13,16 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+// Endpoints where a 401 means "wrong credentials on this attempt", not "your
+// session expired" — these must NOT trigger the global logout/redirect below,
+// or a simple wrong-password click ends up bouncing the user to the landing page.
+const AUTH_ATTEMPT_PATHS = ['/auth/login', '/auth/superadmin-login', '/auth/register-shop'];
+
 api.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
+    const isAuthAttempt = AUTH_ATTEMPT_PATHS.some(p => err.config?.url?.includes(p));
+    if (err.response?.status === 401 && !isAuthAttempt) {
       let redirectTo = '/';
       try {
         const savedUser = JSON.parse(localStorage.getItem('user') || 'null');

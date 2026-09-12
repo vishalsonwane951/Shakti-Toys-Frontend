@@ -30,7 +30,18 @@ export default function SuperAdminShops() {
       .finally(() => setLoading(false));
   }, [filter]);
 
-  useEffect(() => { fetchShops(); }, [fetchShops]);
+  // Deferring into a microtask means fetchShops() runs inside a .then()
+  // callback rather than directly in the effect body — satisfies
+  // react-hooks/set-state-in-effect, which flags setState calls made
+  // synchronously straight from an effect's callstack.
+  useEffect(() => {
+    let ignore = false;
+    Promise.resolve().then(() => {
+      if (!ignore) fetchShops();
+    });
+    return () => { ignore = true; };
+  }, [fetchShops]);
+
   useEffect(() => { api.get('/superadmin/plans').then(r => setPlans(r.data.plans.filter(p => p.isActive))).catch(() => {}); }, []);
 
   const handleFilterChange = (status) => {

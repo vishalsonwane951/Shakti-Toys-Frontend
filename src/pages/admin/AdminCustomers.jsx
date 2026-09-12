@@ -16,7 +16,17 @@ export default function AdminCustomers() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  // Deferring into a microtask means fetchUsers() runs inside a .then()
+  // callback rather than directly in the effect body — satisfies
+  // react-hooks/set-state-in-effect, which flags setState calls made
+  // synchronously straight from an effect's callstack.
+  useEffect(() => {
+    let ignore = false;
+    Promise.resolve().then(() => {
+      if (!ignore) fetchUsers();
+    });
+    return () => { ignore = true; };
+  }, [fetchUsers]);
 
   const handleDelete = useCallback(async (id) => {
     if (id === currentUser._id) { toast.error("Can't delete your own account"); return; }

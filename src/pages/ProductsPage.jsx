@@ -91,7 +91,6 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, category, minPrice, maxPrice, sort, page, categories, shopSlug]);
 
   const handleCategoryChange = useCallback((slug) => {

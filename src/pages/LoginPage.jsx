@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [popup, setPopup] = useState(null);
+  const [userPopup, setUserPopup] = useState(null);
   const [pendingUser, setPendingUser] = useState(null);
   const { login, logout } = useAuth();
   const { shop, shopSlug, brandName, logo } = useShop();
@@ -19,12 +19,16 @@ export default function LoginPage() {
   const location = useLocation();
   const from = location.state?.from || `/${shopSlug}`;
 
-  useEffect(() => {
-    if (!shop) return;
-    if (shop.status === 'pending') setPopup({ scope: 'shop', status: 'pending' });
-    else if (shop.status === 'rejected') setPopup({ scope: 'shop', status: 'rejected' });
-    else if (shop.status === 'approved' && !shop.isActive) setPopup({ scope: 'shop', status: 'suspended' });
-  }, [shop]);
+  // Derived directly from `shop` on every render — no effect/state needed,
+  // since this is a pure function of a value we already have.
+  const shopPopup = !shop ? null
+    : shop.status === 'pending' ? { scope: 'shop', status: 'pending' }
+    : shop.status === 'rejected' ? { scope: 'shop', status: 'rejected' }
+    : shop.status === 'approved' && !shop.isActive ? { scope: 'shop', status: 'suspended' }
+    : null;
+
+  // User-scope popup (set after a login attempt) takes priority when present.
+  const popup = userPopup || shopPopup;
 
   const shopIsLive = shop?.status === 'approved' && shop?.isActive;
 
@@ -35,10 +39,10 @@ export default function LoginPage() {
       const { user } = await login(shopSlug, email, password);
       if (user.status === 'pending') {
         setPendingUser(user);
-        setPopup({ scope: 'user', status: 'pending' });
+        setUserPopup({ scope: 'user', status: 'pending' });
       } else if (user.status === 'rejected') {
         setPendingUser(user);
-        setPopup({ scope: 'user', status: 'rejected' });
+        setUserPopup({ scope: 'user', status: 'rejected' });
       } else {
         toast.success('Welcome back!');
         if (['owner', 'staff'].includes(user.role)) navigate(`/${shopSlug}/admin`);
@@ -54,7 +58,7 @@ export default function LoginPage() {
     : { label: 'the platform admin', email: PLATFORM_ADMIN_EMAIL };
 
   const closeModal = () => {
-    setPopup(null);
+    setUserPopup(null);
     if (popup?.scope === 'user') logout();
   };
 

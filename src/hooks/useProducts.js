@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 
 export function useProducts(shopSlug, params = {}) {
@@ -7,12 +7,20 @@ export function useProducts(shopSlug, params = {}) {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({});
 
+  // `params` is typically a fresh object literal on every render
+  // (e.g. useProducts(slug, { category, sort })), so depending on it
+  // directly would refetch every render. Derive a stable reference keyed
+  // by its JSON shape instead, and depend on that.
+  const paramsKey = JSON.stringify(params);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableParams = useMemo(() => params, [paramsKey]);
+
   useEffect(() => {
     if (!shopSlug) return;
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const { data } = await api.get(`/public/${shopSlug}/products`, { params });
+        const { data } = await api.get(`/public/${shopSlug}/products`, { params: stableParams });
         setProducts(data.products);
         setPagination({ page: data.page, pages: data.pages, total: data.total });
       } catch (err) {
@@ -22,7 +30,7 @@ export function useProducts(shopSlug, params = {}) {
       }
     };
     fetchProducts();
-  }, [shopSlug, JSON.stringify(params)]);
+  }, [shopSlug, stableParams]);
 
   return { products, loading, error, pagination };
 }
