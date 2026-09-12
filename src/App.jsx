@@ -3,7 +3,7 @@ import { Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import { ProtectedRoute, AdminRoute, OwnerRoute, SuperAdminRoute } from './components/common/ProtectedRoute';
-import { ShopProvider } from './context/shop-context';
+import { ShopProvider } from './context/ShopContext';
 import { useShop } from './context/shop-context';
 import { CartProvider } from './context/CartContext';
 
